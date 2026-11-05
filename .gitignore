@@ -1,0 +1,10 @@
+.env
+data/
+__pycache__/
+.pytest_cache/
+.venv/
+
+# Personal application records, kept out of any repository
+*_Confirmation.jpg
+*Cover_Letter*.pdf
+*Cover_Letter*.docx

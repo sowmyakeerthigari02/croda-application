@@ -1,0 +1,568 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ApplyPilot</title>
+<style>
+:root {
+  --bg: #f6f5f1; --panel: #ffffff; --ink: #1d2320; --muted: #66706a; --line: #dfe0d9;
+  --accent: #1f6f54; --accent-ink: #ffffff; --accent-soft: #e3f0ea;
+  --warn: #9a5b00; --warn-soft: #fbf0dc; --bad: #a33a2a; --good: #1f6f54;
+}
+@media (prefers-color-scheme: dark) { :root {
+  --bg: #141715; --panel: #1d211f; --ink: #e9ece9; --muted: #9aa49e; --line: #313733;
+  --accent: #5cc29c; --accent-ink: #0d1a15; --accent-soft: #1f322a;
+  --warn: #e6b566; --warn-soft: #332a18; --bad: #ee8f7f; --good: #5cc29c;
+} }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+header.top { display: flex; align-items: center; gap: 16px; padding: 12px 20px; background: var(--panel); border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.brand { font-weight: 700; font-size: 17px; letter-spacing: -.01em; }
+nav { display: flex; gap: 4px; }
+nav button { background: none; color: var(--muted); border: 0; padding: 6px 12px; border-radius: 6px; }
+nav button.on { background: var(--accent-soft); color: var(--ink); font-weight: 600; }
+.spacer { flex: 1; }
+main { max-width: 1040px; margin: 0 auto; padding: 24px 16px 64px; }
+h1 { font-size: 24px; margin: 0 0 16px; letter-spacing: -.015em; }
+h2 { font-size: 17px; margin: 0 0 12px; }
+h3 { font-size: 14px; margin: 16px 0 6px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 20px; margin-bottom: 16px; }
+label.f { display: block; font-weight: 600; font-size: 13px; margin-bottom: 4px; }
+input[type=text], input[type=url], input[type=email], input[type=tel], select, textarea {
+  width: 100%; padding: 9px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--ink); font: inherit;
+}
+input:focus-visible, select:focus-visible, button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+button { font: inherit; cursor: pointer; padding: 8px 14px; border-radius: 6px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); }
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+button:disabled { opacity: .5; cursor: not-allowed; }
+.row { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px 16px; }
+.muted { color: var(--muted); font-size: 13px; }
+.drop { border: 1.5px dashed var(--line); border-radius: 8px; padding: 18px; text-align: center; }
+.drop.over { border-color: var(--accent); background: var(--accent-soft); }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.tile { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px; text-align: left; }
+.tile.on { border-color: var(--accent); }
+.tile b { display: block; font-size: 24px; line-height: 1.2; }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 12px; color: var(--muted); font-weight: 600; }
+tr.click { cursor: pointer; }
+tr.click:hover { background: var(--accent-soft); }
+.scroll { overflow-x: auto; }
+.badge { display: inline-block; padding: 1px 8px; border-radius: 99px; font-size: 12px; font-weight: 600; background: var(--accent-soft); white-space: nowrap; }
+.badge.PAUSED { background: var(--warn-soft); color: var(--warn); }
+.badge.FAILED { color: var(--bad); }
+.notice { background: var(--warn-soft); border-radius: 8px; padding: 12px 14px; margin-bottom: 12px; overflow-wrap: anywhere; }
+.err { color: var(--bad); font-size: 13px; margin-top: 8px; min-height: 1em; }
+.q { border-top: 1px solid var(--line); padding: 12px 0; }
+.opts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.opts button.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; min-width: 70px; }
+.bar i { display: block; height: 100%; background: var(--accent); }
+dialog { width: min(880px, calc(100vw - 24px)); max-height: calc(100vh - 32px); border: 1px solid var(--line); border-radius: 12px; background: var(--panel); color: var(--ink); padding: 20px; }
+dialog::backdrop { background: rgb(0 0 0 / .4); }
+.live { position: relative; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #000; }
+.live img { display: block; width: 100%; cursor: crosshair; }
+.shot { width: 100%; border: 1px solid var(--line); border-radius: 8px; }
+ul.log { list-style: none; padding: 0; margin: 0; font-size: 13px; color: var(--muted); }
+ul.log li { padding: 3px 0; overflow-wrap: anywhere; }
+.hide { display: none !important; }
+.flex { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.empty { color: var(--muted); padding: 16px 0; }
+</style>
+</head>
+<body>
+<header class="top">
+  <span class="brand">ApplyPilot</span>
+  <nav>
+    <button id="navDash" class="on">Dashboard</button>
+    <button id="navProfile">Build Your Profile</button>
+  </nav>
+  <span class="spacer"></span>
+  <label class="muted" for="who">Applicant</label>
+  <select id="who" style="width:auto"></select>
+  <button id="addWho">Add applicant</button>
+</header>
+
+<main>
+  <section id="dash">
+    <h1 id="welcome">Welcome</h1>
+    <div class="card">
+      <h2>Start a New Application</h2>
+      <label class="f" for="jobUrl">Job Posting URL</label>
+      <input id="jobUrl" type="url" placeholder="Paste job URL here" autocomplete="off">
+      <p class="muted" style="margin:4px 0 16px">LinkedIn, company career pages, Greenhouse, Lever, Workday and similar.</p>
+
+      <div class="row">
+        <div>
+          <label class="f" for="resumeFile">Upload New Resume</label>
+          <div class="drop" id="drop">
+            <div id="dropText">Drag and drop your resume here, or</div>
+            <input id="resumeFile" type="file" accept=".pdf,.docx" class="hide">
+            <button id="browse" type="button" style="margin-top:8px">Browse Files</button>
+            <div class="muted">PDF or DOCX</div>
+          </div>
+        </div>
+        <div>
+          <label class="f" for="resumeSel">Or Select Existing Resume</label>
+          <select id="resumeSel"></select>
+        </div>
+      </div>
+
+      <div class="flex" style="margin-top:16px">
+        <button id="startBtn" class="primary" disabled>Start Application</button>
+        <button id="saveBtn" disabled>Save for Later</button>
+        <span id="need" class="muted"></span>
+      </div>
+      <div class="err" id="startErr" role="alert"></div>
+    </div>
+
+    <div class="tiles" id="tiles"></div>
+    <div class="card">
+      <h2 id="listTitle">Applications</h2>
+      <div class="scroll"><table id="apps"></table></div>
+    </div>
+  </section>
+
+  <section id="profile" class="hide">
+    <h1>Build Your Profile</h1>
+    <p class="muted">Saved once and reused on every application, so you are not asked again. Blank answers are asked when a form requires them.</p>
+    <form id="profileForm">
+      <div class="card"><h2>Personal Information</h2><div class="row" id="personal"></div></div>
+      <div class="card"><h2>Job Application Data</h2><div class="row" id="jobdata"></div></div>
+      <div class="flex" style="margin-bottom:16px">
+        <button class="primary">Save profile</button><span id="saved" class="muted" role="status"></span>
+      </div>
+    </form>
+    <div class="card"><h2>Resumes</h2><div id="resumes"></div></div>
+    <div class="card">
+      <h2>Saved Site Accounts</h2>
+      <p class="muted">Used to sign in automatically on that exact site. Passwords are encrypted and are never shown again, so keep your own copy of any you enter here.</p>
+      <p><label><input id="autoAccounts" type="checkbox"> Create accounts for me automatically and accept each site's terms and privacy notice on my behalf</label></p>
+      <p class="muted">When on, a site that needs an account gets one without asking: a unique password is generated and saved, and accepted terms are listed in that application's log. Marketing boxes stay unticked, and the final submit still needs your yes.</p>
+      <div class="scroll"><table id="accounts"></table></div>
+      <form id="accountForm" autocomplete="off">
+        <div class="row" style="margin-top:12px">
+          <div><label class="f" for="acSite">Site or job portal link</label><input id="acSite" type="text" placeholder="careers.example.com"></div>
+          <div><label class="f" for="acEmail">Login email</label><input id="acEmail" type="email" autocomplete="off"></div>
+          <div><label class="f" for="acPass">Password</label><input id="acPass" type="password" autocomplete="new-password" style="width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:inherit"></div>
+        </div>
+        <div class="flex" style="margin-top:12px"><button class="primary">Save account</button><span id="acMsg" class="muted" role="status"></span></div>
+      </form>
+    </div>
+    <div class="card">
+      <h2>Connected Email</h2>
+      <p class="muted">Enters verification codes automatically. Only mail from the site asking for a code is read, nothing is changed in your inbox, and the code is never saved. This needs an app password from your email provider, not your normal password. Remove it here or at your provider at any time.</p>
+      <p id="mailStatus" role="status"></p>
+      <form id="mailForm" autocomplete="off">
+        <div class="row" style="margin-top:12px">
+          <div><label class="f" for="mailAddress">Gmail, Yahoo or iCloud address</label><input id="mailAddress" type="email" autocomplete="off"></div>
+          <div><label class="f" for="mailPass">App password</label><input id="mailPass" type="password" autocomplete="new-password" style="width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:inherit"></div>
+        </div>
+        <div class="flex" style="margin-top:12px"><button class="primary">Connect email</button><button type="button" id="mailRemove" hidden>Disconnect</button><span id="mailMsg" class="muted" role="status"></span></div>
+      </form>
+    </div>
+    <div class="card">
+      <h2>Saved Answers</h2>
+      <p class="muted">Your earlier replies, reused when the same question comes up. Remove one to be asked again.</p>
+      <div class="scroll"><table id="savedAnswers"></table></div>
+    </div>
+  </section>
+</main>
+
+<dialog id="detail"></dialog>
+<dialog id="whoDlg" style="width:min(420px, calc(100vw - 24px))">
+  <form id="whoForm">
+    <h2>Add applicant</h2>
+    <label class="f" for="whoName">Full name</label>
+    <input id="whoName" type="text" autocomplete="off" required>
+    <div class="flex" style="margin-top:12px">
+      <button class="primary">Add</button><button type="button" id="whoCancel">Cancel</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const FIELD = {
+  first_name: ["First name"], last_name: ["Last name"], preferred_name: ["Preferred name"], email: ["Email"], phone: ["Phone"],
+  address: ["Street address"], city: ["City"], state: ["State"], zip: ["ZIP code"], country: ["Country"],
+  linkedin: ["LinkedIn URL"], website: ["Website or portfolio"],
+  authorized_to_work: ["Authorized to work in the US?", ["Yes", "No"]],
+  needs_sponsorship: ["Needs visa sponsorship now or in future?", ["Yes", "No"]],
+  visa_status: ["Visa status"], over_18: ["Over 18?", ["Yes", "No"]],
+  min_salary: ["Salary to enter when a job posts none (USD per year)", null, "100000"],
+  salary_offset: ["Enter this much below an advertised salary", null, "5000"],
+  bonus_expectation: ["Bonus expectation", null, "No bonus expected"],
+  notice_period: ["Notice period", null, "2 weeks"],
+  willing_to_relocate: ["Willing to relocate?", ["Yes", "No"]], onsite_preference: ["Onsite preference", null, "Onsite, hybrid or remote"],
+  how_heard: ["How you heard about jobs", null, "Blank uses LinkedIn for LinkedIn links"],
+  gender: ["Gender", null, "Blank means ask each time"], race: ["Race", null, "Blank means ask each time"],
+  hispanic: ["Hispanic or Latino?", null, "Blank means ask each time"], veteran: ["Veteran status", null, "Blank means ask each time"],
+  disability: ["Disability status", null, "Blank means ask each time"],
+};
+const SECTION = { new: ["NEW", "ANALYZING", "APPLYING"], paused: ["PAUSED"], applied: ["SUBMITTED"], saved: ["SAVED"] };
+const TITLES = { new: "New Applications", paused: "Paused Applications", applied: "Applied", saved: "Saved for Later" };
+
+let meta, applicants = [], me = null, apps = [], section = "paused", openId = null, liveTimer = null, pending = {};
+
+async function api(path, options = {}) {
+  const response = await fetch(path, { ...options, headers: { "X-ApplyPilot": "1", ...(options.body && !(options.body instanceof FormData) ? { "Content-Type": "application/json" } : {}), ...options.headers } });
+  const data = response.headers.get("content-type")?.includes("json") ? await response.json() : null;
+  if (!response.ok) throw new Error(typeof data?.detail === "string" ? data.detail : "Something went wrong. Please try again.");
+  return data;
+}
+const post = (path, body) => api(path, { method: "POST", body: JSON.stringify(body ?? {}) });
+
+async function init() {
+  meta = await api("/api/meta");
+  await loadApplicants();
+  renderProfileFields();
+  setInterval(refresh, 2500);
+}
+
+async function loadApplicants(selectId) {
+  applicants = await api("/api/applicants");
+  const remembered = selectId || safeGet("who");
+  me = applicants.find(a => a.id === remembered) || applicants[0] || null;
+  $("who").innerHTML = applicants.map(a => `<option value="${a.id}">${esc(a.name)}</option>`).join("");
+  if (me) $("who").value = me.id;
+  $("welcome").textContent = me ? `Welcome back, ${me.profile.first_name || me.name}` : "Welcome";
+  if (!me) await addApplicant();
+  else { await refreshResumes(); await refresh(); fillProfile(); }
+}
+function safeGet(k) { try { return localStorage.getItem(k); } catch { return null; } }
+function safeSet(k, v) { try { localStorage.setItem(k, v); } catch {} }
+
+function addApplicant() {
+  $("whoName").value = "";
+  $("whoDlg").showModal();
+}
+$("whoForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const name = $("whoName").value.trim();
+  if (!name) return;
+  const made = await post("/api/applicants", { name });
+  $("whoDlg").close();
+  safeSet("who", made.id);
+  await loadApplicants(made.id);
+  show("profile");
+});
+$("whoCancel").onclick = () => $("whoDlg").close();
+
+async function refreshResumes() {
+  if (!me) return;
+  const list = await api(`/api/applicants/${me.id}/resumes`);
+  $("resumeSel").innerHTML = `<option value="">Select resume</option>` + list.map(r => `<option value="${r.id}">${esc(r.filename)}</option>`).join("");
+  $("resumes").innerHTML = (list.length ? list.map(r => `<div class="flex" style="padding:6px 0"><span style="flex:1;overflow-wrap:anywhere">${esc(r.filename)}${r.text_length ? "" : ' <span class="muted">(text could not be read; AI drafting off for this file)</span>'}</span><button data-del="${r.id}">Delete</button></div>`).join("") : `<div class="empty">No resumes yet. Upload one when you start an application.</div>`);
+  gate();
+}
+
+$("resumes").addEventListener("click", async e => {
+  const id = e.target.dataset?.del;
+  if (!id) return;
+  try { await api(`/api/resumes/${id}`, { method: "DELETE" }); await refreshResumes(); }
+  catch (err) { alert(err.message); }
+});
+
+async function refresh() {
+  if (!me) return;
+  const data = await api(`/api/applications?applicant_id=${me.id}`);
+  apps = data.applications;
+  const c = data.counts;
+  $("tiles").innerHTML = Object.keys(TITLES).map(k => `<button class="tile ${section === k ? "on" : ""}" data-s="${k}"><b>${c[k]}</b>${TITLES[k]}</button>`).join("");
+  renderApps();
+  if (openId) renderDetail();
+}
+$("tiles").addEventListener("click", e => {
+  const b = e.target.closest("[data-s]");
+  if (b) { section = b.dataset.s; refresh(); }
+});
+
+function renderApps() {
+  const rows = apps.filter(a => SECTION[section].includes(a.status));
+  $("listTitle").textContent = TITLES[section];
+  $("apps").innerHTML = rows.length
+    ? `<tr><th>Job</th><th>Company</th><th>Status</th><th>Progress</th><th>Resume</th><th>Updated</th></tr>` + rows.map(a => `
+      <tr class="click" data-id="${a.id}" tabindex="0">
+        <td>${esc(a.job.title || a.job_url)}</td><td>${esc(a.job.company || "")}</td>
+        <td><span class="badge ${a.status}">${esc(a.status)}</span></td>
+        <td><div class="bar"><i style="width:${a.progress}%"></i></div></td>
+        <td>${esc(a.resume_filename)}</td><td class="muted">${new Date(a.updated_at).toLocaleString()}</td>
+      </tr>`).join("")
+    : `<tr><td class="empty">Nothing in ${TITLES[section]}.</td></tr>`;
+}
+$("apps").addEventListener("click", e => {
+  const row = e.target.closest("[data-id]");
+  if (row) openDetail(row.dataset.id);
+});
+$("apps").addEventListener("keydown", e => {
+  const row = e.target.closest("[data-id]");
+  if (row && e.key === "Enter") openDetail(row.dataset.id);
+});
+
+// New application
+function gate() {
+  const hasUrl = $("jobUrl").value.trim().length > 0;
+  const hasResume = $("resumeFile").files.length > 0 || $("resumeSel").value;
+  $("startBtn").disabled = $("saveBtn").disabled = !(hasUrl && hasResume);
+  $("need").textContent = !hasUrl && !hasResume ? "Add a job URL and a resume to start." : !hasUrl ? "Add the job URL." : !hasResume ? "Add a resume." : "Job URL and resume are ready.";
+}
+$("jobUrl").addEventListener("input", gate);
+$("resumeSel").addEventListener("change", () => { if ($("resumeSel").value) { $("resumeFile").value = ""; showFile(); } gate(); });
+$("browse").onclick = () => $("resumeFile").click();
+$("resumeFile").addEventListener("change", () => { $("resumeSel").value = ""; showFile(); gate(); });
+function showFile() {
+  const f = $("resumeFile").files[0];
+  $("dropText").textContent = f ? `${f.name}: ready` : "Drag and drop your resume here, or";
+  $("browse").textContent = f ? "Replace Resume" : "Browse Files";
+}
+const drop = $("drop");
+["dragenter", "dragover"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave", "drop"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove("over"); }));
+drop.addEventListener("drop", e => {
+  if (e.dataTransfer.files.length) { $("resumeFile").files = e.dataTransfer.files; $("resumeSel").value = ""; showFile(); gate(); }
+});
+
+async function create(start) {
+  $("startErr").textContent = "";
+  const form = new FormData();
+  form.append("applicant_id", me.id);
+  form.append("job_url", $("jobUrl").value.trim());
+  form.append("start", start ? "true" : "false");
+  form.append("resume_id", $("resumeSel").value);
+  if ($("resumeFile").files[0]) form.append("file", $("resumeFile").files[0]);
+  $("startBtn").disabled = true;
+  try {
+    const made = await api("/api/applications", { method: "POST", body: form });
+    $("jobUrl").value = ""; $("resumeFile").value = ""; showFile();
+    await refreshResumes();
+    section = start ? "new" : "saved";
+    await refresh();
+    if (start) openDetail(made.id);
+  } catch (err) { $("startErr").textContent = err.message; }
+  gate();
+}
+$("startBtn").onclick = () => create(true);
+$("saveBtn").onclick = () => create(false);
+
+// Detail
+function openDetail(id) {
+  openId = id; pending = {};
+  $("detail").innerHTML = "";
+  $("detail").showModal();
+  renderDetail(true);
+}
+$("detail").addEventListener("close", () => { openId = null; stopLive(); });
+
+let lastKey = "";
+async function renderDetail(force) {
+  const a = await api(`/api/applications/${openId}`);
+  const key = [a.status, a.pause_kind, a.pause_reason, a.live, JSON.stringify(a.questions), a.progress, a.log.length, a.screenshot].join("|");
+  if (!force && key === lastKey) return;
+  lastKey = key;
+  const j = a.job;
+  const showLive = a.live && a.status === "PAUSED" && ["sign_in", "help"].includes(a.pause_kind);
+  $("detail").innerHTML = `
+    <div class="flex" style="justify-content:space-between">
+      <h2 style="margin:0">${esc(j.title || "Job application")}${j.company ? ` at ${esc(j.company)}` : ""}</h2>
+      <button id="closeD">Close</button>
+    </div>
+    <p class="muted" style="overflow-wrap:anywhere">${esc(j.location || "")} ${j.location ? "·" : ""} <span class="badge ${a.status}">${esc(a.status)}</span> ${esc(a.submission_status)}<br>Resume: ${esc(a.resume_filename)}${j.cover_letter ? `<br>Cover letter: <a href="/api/applications/${a.id}/cover-letter">${esc(j.cover_letter.filename)}</a>` : ""}</p>
+    ${a.status === "SUBMITTED" ? `<div class="notice" style="background:var(--accent-soft)">${esc(a.submission_status)}.</div>` : ""}
+    ${a.pause_reason && a.status === "PAUSED" ? `<div class="notice">${esc(a.pause_reason)}</div>` : ""}
+    ${renderQuestions(a)}
+    ${a.pause_kind === "approval" ? `<div class="flex" style="margin-bottom:12px"><button class="primary" id="yes">Yes, submit</button><button id="no">No, hold</button></div>` : ""}
+    ${a.pause_kind === "account" ? `<div class="flex" style="margin-bottom:12px"><button class="primary" id="acctNew">Create a new account</button><button id="acctSelf">I already have one, I'll sign in</button></div>` : ""}
+    ${showLive ? `<h3>Live browser</h3><p class="muted">Click the page and type here. Your typing goes straight to the site and is not stored.</p>
+      <div class="live" id="live" tabindex="0"><img id="liveImg" alt="Live view of the application browser"></div>
+      <div class="flex" style="margin:8px 0"><button id="scrollUp">Scroll up</button><button id="scrollDown">Scroll down</button><button class="primary" id="cont">I'm done, continue</button></div>` : ""}
+    ${a.status === "PAUSED" && !a.live ? `<div class="flex" style="margin-bottom:12px"><button class="primary" id="retry">Retry</button></div>` : ""}
+    ${a.status === "SAVED" ? `<div class="flex" style="margin-bottom:12px"><button class="primary" id="startSaved">Start Application</button></div>` : ""}
+    ${a.status === "PAUSED" ? `<p class="muted">Already saw the employer's confirmation yourself? <button id="mark">Mark as Applied</button></p>` : ""}
+    <div class="err" id="dErr" role="alert"></div>
+    ${a.screenshot && !showLive ? `<h3>${a.status === "SUBMITTED" ? "Confirmation" : "Current page"}</h3><img class="shot" alt="Screenshot of the application page" src="/api/applications/${a.id}/screenshot?v=${encodeURIComponent(a.updated_at)}">` : ""}
+    ${renderJob(j)}
+    <h3>Activity</h3><ul class="log">${a.log.slice().reverse().map(l => `<li>${new Date(l.at).toLocaleTimeString()}: ${esc(l.message)}</li>`).join("")}</ul>`;
+  wireDetail(a, showLive);
+}
+
+function renderQuestions(a) {
+  if (a.pause_kind !== "questions" || !a.questions.length) return "";
+  const open = a.questions.filter(q => q.answer === null);
+  return `<div id="qs">
+    ${open.map(q => `<div class="q"><strong>${q.number}. ${esc(q.question)}</strong>${q.required ? "" : ' <span class="muted">(optional)</span>'}
+      ${q.hint ? `<div class="muted">${esc(q.hint)}</div>` : ""}
+      ${q.options.length
+        ? `<div class="opts">${q.options.map(o => `<button data-k="${esc(q.key)}" data-v="${esc(o)}" class="${pending[q.key] === o ? "on" : ""}">${esc(o)}</button>`).join("")}</div>`
+        : `<input type="text" data-k="${esc(q.key)}" value="${esc(pending[q.key] || "")}" placeholder="${q.example ? "Example: " + esc(q.example) : ""}" aria-label="${esc(q.question)}" style="margin-top:6px">`}
+    </div>`).join("")}
+    <div class="q"><label class="f" for="reply">Or answer in one line</label>
+      <input id="reply" type="text" placeholder="1. No, 2. Leave blank, 3. USD 145,000 per year"></div>
+    <div class="flex" style="margin-bottom:12px"><button class="primary" id="sendQ">Send answers</button></div></div>`;
+}
+
+function renderJob(j) {
+  if (!j.analyzed) return "";
+  const list = (title, items) => items?.length ? `<h3>${title}</h3><ul style="margin:0;padding-left:18px">${items.map(i => `<li>${esc(i)}</li>`).join("")}</ul>` : "";
+  const pay = j.salary_max ? `<h3>Advertised salary</h3>USD ${Number(j.salary_min).toLocaleString()}${j.salary_max !== j.salary_min ? ` to ${Number(j.salary_max).toLocaleString()}` : ""}` : "";
+  return `<details style="margin:12px 0"><summary>Job details</summary>${j.employment_type ? `<h3>Employment type</h3>${esc(j.employment_type)}` : ""}${pay}${list("Required skills", j.required_skills)}${list("Preferred skills", j.preferred_skills)}${list("Requirements", j.requirements)}${list("Responsibilities", j.responsibilities)}</details>`;
+}
+
+function wireDetail(a, showLive) {
+  const err = m => { $("dErr").textContent = m; };
+  const act = fn => async () => { try { await fn(); await renderDetail(true); refresh(); } catch (e) { err(e.message); } };
+  $("closeD").onclick = () => $("detail").close();
+  if ($("yes")) $("yes").onclick = act(() => post(`/api/applications/${a.id}/decision`, { decision: "submit" }));
+  if ($("no")) $("no").onclick = act(() => post(`/api/applications/${a.id}/decision`, { decision: "hold" }));
+  if ($("acctNew")) $("acctNew").onclick = act(() => post(`/api/applications/${a.id}/decision`, { decision: "create" }));
+  if ($("acctSelf")) $("acctSelf").onclick = act(() => post(`/api/applications/${a.id}/decision`, { decision: "self" }));
+  if ($("retry")) $("retry").onclick = act(() => post(`/api/applications/${a.id}/continue`));
+  if ($("cont")) $("cont").onclick = act(() => post(`/api/applications/${a.id}/continue`));
+  if ($("startSaved")) $("startSaved").onclick = act(() => post(`/api/applications/${a.id}/start`));
+  if ($("mark")) $("mark").onclick = act(() => post(`/api/applications/${a.id}/mark-applied`));
+  if ($("qs")) {
+    $("qs").querySelectorAll(".opts button").forEach(b => b.onclick = () => {
+      pending[b.dataset.k] = b.dataset.v;
+      b.parentElement.querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b));
+    });
+    $("qs").querySelectorAll("input[data-k]").forEach(i => i.oninput = () => { pending[i.dataset.k] = i.value; });
+    $("sendQ").onclick = act(async () => {
+      const reply = $("reply").value.trim();
+      const answers = Object.fromEntries(Object.entries(pending).filter(([, v]) => v && v.trim()));
+      if (!reply && !Object.keys(answers).length) throw new Error("Answer at least one question.");
+      await post(`/api/applications/${a.id}/answers`, reply ? { reply, answers } : { answers });
+      pending = {};
+    });
+  }
+  stopLive();
+  if (showLive) startLive(a.id);
+}
+
+function startLive(id) {
+  const img = $("liveImg"), box = $("live");
+  const send = ev => post(`/api/applications/${id}/live/input`, ev).catch(() => {});
+  const tick = () => { if ($("liveImg")) $("liveImg").src = `/api/applications/${id}/live.jpg?t=${Date.now()}`; };
+  tick();
+  liveTimer = setInterval(tick, 1000);
+  img.addEventListener("click", e => {
+    const r = img.getBoundingClientRect();
+    send({ type: "click", x: (e.clientX - r.left) * 1280 / r.width, y: (e.clientY - r.top) * 800 / r.height });
+    box.focus();
+  });
+  box.addEventListener("keydown", e => {
+    if (e.ctrlKey || e.metaKey) return;
+    e.preventDefault();
+    if (e.key.length === 1) send({ type: "text", text: e.key });
+    else if (["Enter", "Tab", "Backspace", "Delete", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Escape", "Home", "End"].includes(e.key)) send({ type: "key", key: e.key });
+  });
+  box.addEventListener("paste", e => { e.preventDefault(); send({ type: "text", text: e.clipboardData.getData("text") }); });
+  $("scrollUp").onclick = () => send({ type: "scroll", dy: -400 });
+  $("scrollDown").onclick = () => send({ type: "scroll", dy: 400 });
+  box.focus();
+}
+function stopLive() { if (liveTimer) clearInterval(liveTimer); liveTimer = null; }
+
+// Profile
+function renderProfileFields() {
+  const build = keys => keys.map(k => {
+    const [label, options, hint] = FIELD[k];
+    const input = options
+      ? `<select id="p_${k}" name="${k}"><option value="">Ask me when needed</option>${options.map(o => `<option>${o}</option>`).join("")}</select>`
+      : `<input type="text" id="p_${k}" name="${k}" placeholder="${esc(hint || "")}">`;
+    return `<div><label class="f" for="p_${k}">${label}</label>${input}</div>`;
+  }).join("");
+  $("personal").innerHTML = build(meta.personal_fields);
+  $("jobdata").innerHTML = build(meta.job_data_fields);
+  fillProfile();
+}
+async function fillProfile() {
+  if (!me || !meta || !$("personal").children.length) return;
+  for (const el of $("profileForm").elements) if (el.name) el.value = me.profile[el.name] || "";
+  await refreshAccounts();
+  await refreshMailbox();
+  const saved = await api(`/api/applicants/${me.id}/answers`);
+  $("savedAnswers").innerHTML = saved.length
+    ? `<tr><th>Question</th><th>Answer</th><th></th></tr>` + saved.map(s => `<tr><td>${esc(s.question)}</td><td>${s.answer === "__LEAVE_BLANK__" ? "Leave blank" : esc(s.answer)}</td><td><button data-key="${esc(s.key)}">Remove</button></td></tr>`).join("")
+    : `<tr><td class="empty">No saved answers yet.</td></tr>`;
+}
+const ACCOUNT_STATUS = { active: "Working", pending: "Created, not signed in yet", failed: "Last sign-in failed" };
+async function refreshAccounts() {
+  const list = await api(`/api/applicants/${me.id}/credentials`);
+  $("accounts").innerHTML = list.length
+    ? `<tr><th>Site</th><th>Login email</th><th>Status</th><th></th></tr>` + list.map(c => `<tr><td style="overflow-wrap:anywhere">${esc(c.site)}</td><td style="overflow-wrap:anywhere">${esc(c.login_email)}</td><td>${esc(ACCOUNT_STATUS[c.status] || c.status)}</td><td><button data-cred="${c.id}">Remove</button></td></tr>`).join("")
+    : `<tr><td class="empty">No saved accounts yet.</td></tr>`;
+}
+$("accounts").addEventListener("click", async e => {
+  const id = e.target.dataset?.cred;
+  if (id) { await api(`/api/applicants/${me.id}/credentials/${id}`, { method: "DELETE" }); refreshAccounts(); }
+});
+$("accountForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  try {
+    await post(`/api/applicants/${me.id}/credentials`, { site: $("acSite").value, login_email: $("acEmail").value, password: $("acPass").value });
+    $("acSite").value = ""; $("acEmail").value = ""; $("acPass").value = "";
+    $("acMsg").textContent = "Saved.";
+    await refreshAccounts();
+  } catch (err) { $("acMsg").textContent = err.message; }
+});
+$("autoAccounts").addEventListener("change", async e => {
+  await api(`/api/applicants/${me.id}/auto-accounts`, { method: "PUT", body: JSON.stringify({ enabled: e.target.checked }) });
+});
+async function refreshMailbox() {
+  $("autoAccounts").checked = !!(await api(`/api/applicants/${me.id}/auto-accounts`)).since;
+  const { mailbox } = await api(`/api/applicants/${me.id}/mailbox`);
+  $("mailStatus").textContent = !mailbox ? "No email connected."
+    : mailbox.status === "failed" ? `${mailbox.address} stopped accepting its app password. Connect it again.`
+    : `Connected: ${mailbox.address}`;
+  $("mailRemove").hidden = !mailbox;
+}
+$("mailForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  $("mailMsg").textContent = "Checking the login…";
+  try {
+    await api(`/api/applicants/${me.id}/mailbox`, { method: "PUT", body: JSON.stringify({ address: $("mailAddress").value, app_password: $("mailPass").value }) });
+    $("mailAddress").value = ""; $("mailPass").value = "";
+    $("mailMsg").textContent = "Connected.";
+    await refreshMailbox();
+  } catch (err) { $("mailMsg").textContent = err.message; }
+});
+$("mailRemove").addEventListener("click", async () => {
+  await api(`/api/applicants/${me.id}/mailbox`, { method: "DELETE" });
+  $("mailMsg").textContent = "Disconnected.";
+  await refreshMailbox();
+});
+$("savedAnswers").addEventListener("click", async e => {
+  const key = e.target.dataset?.key;
+  if (key) { await api(`/api/applicants/${me.id}/answers/${encodeURIComponent(key)}`, { method: "DELETE" }); fillProfile(); }
+});
+$("profileForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const profile = Object.fromEntries([...$("profileForm").elements].filter(el => el.name).map(el => [el.name, el.value]));
+  try {
+    me = await api(`/api/applicants/${me.id}`, { method: "PUT", body: JSON.stringify({ profile }) });
+    $("saved").textContent = "Saved.";
+    setTimeout(() => { $("saved").textContent = ""; }, 2500);
+    await loadApplicants(me.id);
+  } catch (err) { $("saved").textContent = err.message; }
+});
+
+function show(view) {
+  $("dash").classList.toggle("hide", view !== "dash");
+  $("profile").classList.toggle("hide", view !== "profile");
+  $("navDash").classList.toggle("on", view === "dash");
+  $("navProfile").classList.toggle("on", view === "profile");
+  if (view === "profile") fillProfile();
+}
+$("navDash").onclick = () => show("dash");
+$("navProfile").onclick = () => show("profile");
+$("who").addEventListener("change", e => { safeSet("who", e.target.value); loadApplicants(e.target.value); });
+$("addWho").onclick = addApplicant;
+
+init().catch(err => { $("startErr").textContent = err.message; });
+gate();
+</script>
+</body>
+</html>

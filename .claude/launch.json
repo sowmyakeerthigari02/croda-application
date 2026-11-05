@@ -1,0 +1,4 @@
+{ "version": "0.0.1", "configurations": [
+  { "name": "applypilot", "runtimeExecutable": "C:/Users/sowmy/AppData/Local/Temp/claude/applypilot-venv/Scripts/python.exe", "runtimeArgs": ["-m", "uvicorn", "app.main:app", "--port", "8000", "--no-access-log"], "port": 8000 },
+  { "name": "applypilot-demo", "runtimeExecutable": "C:/Users/sowmy/AppData/Local/Temp/claude/applypilot-venv/Scripts/python.exe", "runtimeArgs": ["-m", "tests.run_demo"], "port": 8000 }
+] }
